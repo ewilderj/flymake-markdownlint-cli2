@@ -8,7 +8,7 @@ Lint your Markdown files with
 ## Usage
 
 ```lisp
-(add-hook 'markdown-mode-hook #'flymake-mode)
+(add-hook 'markdown-mode-hook 'flymake-mode)
 (require 'flymake-markdownlint-cli2)
 (add-hook 'markdown-mode-hook 'flymake-markdownlint-cli2-setup)
 ```

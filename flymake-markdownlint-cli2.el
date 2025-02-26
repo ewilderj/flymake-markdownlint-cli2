@@ -27,8 +27,8 @@
 ;;; Commentary:
 
 ;; Usage:
-;;   (require 'flymake-mdl)
-;;   (add-hook 'markdown-mode-hook 'flymake-mdl-setup)
+;;   (require 'flymake-markdownlint-cli2)
+;;   (add-hook 'markdown-mode-hook 'flymake-markdownlint-cli2-setup)
 ;;
 ;; Derived largely from ruby example:
 ;; https://www.gnu.org/software/emacs/manual/html_node/flymake/An-annotated-example-backend.html
@@ -40,30 +40,30 @@
 (defvar-local mdl--flymake-proc nil)
 
 
-(message "loading flymake-mdl package")
+(message "loading flymake-markdownlint-cli2 package")
 
-(defgroup flymake-mdl nil
+(defgroup flymake-markdownlint-cli2 nil
   "markdownlint-cli2 backend for Flymake."
-  :prefix "flymake-mdl-"
+  :prefix "flymake-markdownlint-cli2-"
   :group 'tools)
 
-(defcustom flymake-mdl-program
+(defcustom flymake-markdownlint-cli2-program
   "markdownlint-cli2"
   "Name of the `markdownlint-cli2' executable."
   :type 'string)
 
-(defcustom flymake-mdl-config-filename
+(defcustom flymake-markdownlint-cli2-config-filename
   ".markdownlint-cli2.mjs"
   "File name of the linter config file"
   :type 'string)
 
-(defcustom flymake-mdl-config
+(defcustom flymake-markdownlint-cli2-config
   nil
-  "Full path of linter config file. If nil, searches the default directory and its parents for a file named `flymake-mdl-config-filename`"
+  "Full path of linter config file. If nil, searches the default directory and its parents for a file named `flymake-markdownlint-cli2-config-filename`"
   :type 'string)
 
 (defun find-mdl-config (dir)
-  (let ((config-file (expand-file-name flymake-mdl-config-filename dir)))
+  (let ((config-file (expand-file-name flymake-markdownlint-cli2-config-filename dir)))
     (if (file-exists-p config-file)
         config-file
       (let ((parent-dir (file-name-directory (directory-file-name dir))))
@@ -72,11 +72,11 @@
           (find-mdl-config parent-dir)))))
   )
 
-(defun flymake-mdl (report-fn &rest _args)
+(defun flymake-markdownlint-cli2 (report-fn &rest _args)
   ;; Not having the linter is a serious problem which should cause
   ;; the backend to disable itself, so an error is signaled.
-  (unless (executable-find flymake-mdl-program)
-    (error "Could not find '%s' executable" flymake-mdl-program))
+  (unless (executable-find flymake-markdownlint-cli2-program)
+    (error "Could not find '%s' executable" flymake-markdownlint-cli2-program))
 
   ;; If a live process launched in an earlier check was found, that
   ;; process is killed.  When that process's sentinel eventually runs,
@@ -100,7 +100,7 @@
 
   (let ((source (current-buffer))
         (mdl--config-file
-         (or flymake-mdl-config
+         (or flymake-markdownlint-cli2-config
              (find-mdl-config default-directory)))
         (mdl--args
          (if mdl--config-file
@@ -117,15 +117,15 @@
       (setq
        mdl--flymake-proc
        (make-process
-        :name "flymake-mdl" :noquery t :connection-type 'pipe
-        :buffer (generate-new-buffer " *flymake-mdl*") ; Make output go to a temporary buffer.
-        :command (append (list flymake-mdl-program) mdl--args)
+        :name "flymake-markdownlint-cli2" :noquery t :connection-type 'pipe
+        :buffer (generate-new-buffer " *flymake-markdownlint-cli2*") ; Make output go to a temporary buffer.
+        :command (append (list flymake-markdownlint-cli2-program) mdl--args)
         :sentinel
         (lambda (proc _event)
           ;; Check that the process has indeed exited, as it might be simply suspended.
           (when (memq (process-status proc) '(exit signal))
             (unwind-protect
-                ;; Only proceed if `proc' is the same as `mdl--flymake-proc',
+                ;; Only proceed if `proc' is the same as `markdownlint-cli2--flymake-proc',
                 ;; which indicates that `proc' is not an obsolete process.
                 (if (with-current-buffer source (eq proc mdl--flymake-proc))
                     (with-current-buffer (process-buffer proc)
@@ -158,9 +158,9 @@
       (process-send-eof mdl--flymake-proc))))
 
 ;;;###autoload
-(defun flymake-mdl-setup ()
-  "Enable mdl markdown flymake backend."
-  (add-hook 'flymake-diagnostic-functions #'flymake-mdl nil t))
+(defun flymake-markdownlint-cli2-setup ()
+  "Enable markdownlint-cli2 markdown flymake backend."
+  (add-hook 'flymake-diagnostic-functions #'flymake-markdownlint-cli2 nil t))
 
-(provide 'flymake-mdl)
-;;; flymake-mdl.el ends here
+(provide 'flymake-markdownlint-cli2)
+;;; flymake-markdownlint-cli2.el ends here

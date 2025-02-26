@@ -1,15 +1,15 @@
 ;;; flymake-mdl.el --- An mdl Flymake backend  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2024 Micah Elliott
+;; Copyright (c) 2025 Edd Wilder-James
 
-;; ORIGINAL
-;; Author: Micah Elliott <mde@micahelliott.com>
-;; URL: https://github.com/micahelliott/flymake-mdl
-
-;; This fork
 ;; Author: Edd Wilder-James
 ;; URL: https://github.com/ewilderj/flymake-mdl
 ;; Package-Version: 0
+
+;; Original author
+;; Author: Micah Elliott <mde@micahelliott.com>
+;; URL: https://github.com/micahelliott/flymake-mdl
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 
 ;; Usage:
 ;;   (require 'flymake-mdl)
-;;   (add-hook 'sql-mode-hook 'flymake-mdl-setup)
+;;   (add-hook 'markdown-mode-hook 'flymake-mdl-setup)
 ;;
 ;; Derived largely from ruby example:
 ;; https://www.gnu.org/software/emacs/manual/html_node/flymake/An-annotated-example-backend.html
@@ -39,17 +39,17 @@
 
 (defvar-local mdl--flymake-proc nil)
 
+
 (message "loading flymake-mdl package")
 
 (defgroup flymake-mdl nil
-  "MDL markdown backend for Flymake."
+  "markdownlint-cli2 backend for Flymake."
   :prefix "flymake-mdl-"
   :group 'tools)
 
 (defcustom flymake-mdl-program
   "markdownlint-cli2"
-  "Name of to the `mdlint' executable."
-  ;; Alternatives are: hugslint (for hugsql preprocessing), or a script of your own.
+  "Name of the `markdownlint-cli2' executable."
   :type 'string)
 
 (defcustom flymake-mdl-config-filename
@@ -57,14 +57,11 @@
   "File name of the linter config file"
   :type 'string)
 
-
 (defcustom flymake-mdl-config
   nil
-  "Full path of linter config file. If nil, will search the default directory and its parents for a file named `flymake-mdl-config-filename`"
+  "Full path of linter config file. If nil, searches the default directory and its parents for a file named `flymake-mdl-config-filename`"
   :type 'string)
 
-;; recursively look for the file ".markdownlint-cli2.mjs" in the
-;; current directory and then its parents
 (defun find-mdl-config (dir)
   (let ((config-file (expand-file-name flymake-mdl-config-filename dir)))
     (if (file-exists-p config-file)
@@ -76,32 +73,11 @@
   )
 
 (defun flymake-mdl (report-fn &rest _args)
-  ;; (message "running eee flymake-mdl")
-  ;; Not having an interpreter is a serious problem which should cause
+  ;; Not having the linter is a serious problem which should cause
   ;; the backend to disable itself, so an error is signaled.
   (unless (executable-find flymake-mdl-program)
     (error "Could not find '%s' executable" flymake-mdl-program))
 
-  (setq mdl--config-file
-        (or flymake-mdl-config
-            (find-mdl-config default-directory))
-        )
-  (message "config file: %s" mdl--config-file)
-
-  ;; create arguments for linter. if there is a config file, use it
-  ;; by adding "--config" and the path to the config file, otherwise
-  ;; just use "-" to read from stdin
-  (setq mdl--args
-        (if mdl--config-file
-            (list "--config" mdl--config-file "-")
-          (list "-")))
-
-  (setq mdl--dir
-        (if mdl--config-file
-            (file-name-directory mdl--config-file)
-          default-directory))
-
-  ;; (unless (executable-find "ruby") (error "Cannot find a suitable ruby 2"))
   ;; If a live process launched in an earlier check was found, that
   ;; process is killed.  When that process's sentinel eventually runs,
   ;; it will notice its obsoletion, since it have since reset
@@ -109,43 +85,61 @@
   (when (process-live-p mdl--flymake-proc) (kill-process mdl--flymake-proc))
   ;; Save the current buffer, the narrowing restriction, remove any narrowing restriction.
 
-  (let ((source (current-buffer)) (default-directory mdl--dir))
+  ;; (let ((mdl--config-file
+  ;;        (or flymake-mdl-config
+  ;;            (find-mdl-config default-directory)))
+  ;;       (mdl--args
+  ;;        (if mdl--config-file
+  ;;            (list "--config" mdl--config-file "-")
+  ;;          (list "-")))
+  ;;       (mdl--dir
+  ;;        (if mdl--config-file
+  ;;            (file-name-directory mdl--config-file)
+  ;;          default-directory)))
+  ;;   )
+
+  (let ((source (current-buffer))
+        (mdl--config-file
+         (or flymake-mdl-config
+             (find-mdl-config default-directory)))
+        (mdl--args
+         (if mdl--config-file
+             (list "--config" mdl--config-file "-")
+           (list "-")))
+        (default-directory (if mdl--config-file
+                               (file-name-directory mdl--config-file)
+                             default-directory)))
+
     (save-restriction
       (widen)
-      ;; Reset the `mdl--flymake-proc' process to a new process calling the ruby tool.
+      ;; Reset the `mdl--flymake-proc' process to a new process calling the linter
 
       (setq
        mdl--flymake-proc
        (make-process
         :name "flymake-mdl" :noquery t :connection-type 'pipe
         :buffer (generate-new-buffer " *flymake-mdl*") ; Make output go to a temporary buffer.
-        ;; :command '("ruby" "-w" "-c")
-        ;; :command '("hugslint")
-        ;; append computed mdl--args to the command
         :command (append (list flymake-mdl-program) mdl--args)
         :sentinel
         (lambda (proc _event)
           ;; Check that the process has indeed exited, as it might be simply suspended.
           (when (memq (process-status proc) '(exit signal))
             (unwind-protect
-                ;; Only proceed if `proc' is the same as `mdl--flymake-proc', which indicates that `proc' is not an obsolete process.
+                ;; Only proceed if `proc' is the same as `mdl--flymake-proc',
+                ;; which indicates that `proc' is not an obsolete process.
                 (if (with-current-buffer source (eq proc mdl--flymake-proc))
                     (with-current-buffer (process-buffer proc)
                       ;; echo buffer working directory
                       ;; (message (expand-file-name default-directory))
                       ;; (message (buffer-string))
                       (goto-char (point-min))
-                      ;; Parse the output buffer for diagnostic's messages and locations, collect them in a list of objects, and call `report-fn'.
+                      ;; Parse the output buffer for diagnostic's messages and
+                      ;; locations, collect them in a list of objects, and call `report-fn'.
                       (cl-loop
-                       ;; (stdin):9: MD012 Multiple consecutive blank lines
-                       ;; README.md:12: MD032 Lists should be surrounded by blank lines
-                       ;; do (message "searching")
                        while (search-forward-regexp
-                              ;; "^.*:\\([0-9]+\\) \\(MD[0-9]+\\) \\(.*\\)$"
                               "^\\(stdin\\):\\([0-9]+\\):?[0-9]* \\([A-Z]+[0-9]+/.*\\)$"
                               nil t)
-                       ;; "^\\(?:.*.rb\\|-\\):\\([0-9]+\\): \\(.*\\)$"
-                       ;; do (message "found match %s" (match-string 0))
+
                        for msg = (match-string 3)
                        for (beg . end) = (flymake-diag-region source (string-to-number (match-string 2)))
                        ;; for type = (if (string-match "^warning" msg) :warning :error)
@@ -155,17 +149,13 @@
                        into diags
                        finally (funcall report-fn diags)))
                   (flymake-log :warning "Canceling obsolete check %s" proc))
+
               ;; Cleanup the temporary buffer used to hold the check's output.
               (kill-buffer (process-buffer proc)))))))
-      ;; Send the buffer contents to the process's stdnin, followed by an EOF.
+
+      ;; Send the buffer contents to the process's stdin, followed by an EOF.
       (process-send-region mdl--flymake-proc (point-min) (point-max))
       (process-send-eof mdl--flymake-proc))))
-
-(defun mdl-setup-flymake-backend ()
-  "Add mdl to diagnostics."
-  (add-hook 'flymake-diagnostic-functions 'flymake-mdl nil t))
-
-;; (add-hook 'sql-mode-hook 'mdl-setup-flymake-backend)
 
 ;;;###autoload
 (defun flymake-mdl-setup ()

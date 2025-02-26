@@ -1,5 +1,12 @@
 # flymake-mdl, a markdown linter for Emacs
 
+## Notes from @ewilderj
+
+This has been forked to work with [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2).
+
+## Original README contents...
+
+
 Lint your markdown files with
 [flymake](https://www.gnu.org/software/emacs/manual/html_node/flymake/index.html)
 (built into Emacs)
@@ -17,3 +24,4 @@ But note that `mdl` is a little slow, so you might want to
 (require 'flymake-mdl)
 (add-hook 'markdown-mode-hook 'flymake-mdl-setup)
 ```
+

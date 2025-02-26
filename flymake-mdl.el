@@ -42,14 +42,14 @@
   :group 'tools)
 
 (defcustom flymake-mdl-program
-  "mdl"
+  "markdownlint-cli2"
   "Name of to the `mdlint' executable."
   ;; Alternatives are: hugslint (for hugsql preprocessing), or a script of your own.
   :type 'string)
 
 
 (defun flymake-mdl (report-fn &rest _args)
-  (message "running flymake-mdl")
+  ;; (message "running eee flymake-mdl")
   ;; Not having an interpreter is a serious problem which should cause
   ;; the backend to disable itself, so an error is signaled.
   (unless (executable-find flymake-mdl-program)
@@ -72,7 +72,7 @@
         :buffer (generate-new-buffer " *flymake-mdl*") ; Make output go to a temporary buffer.
         ;; :command '("ruby" "-w" "-c")
         ;; :command '("hugslint")
-        :command (list flymake-mdl-program)
+        :command (list flymake-mdl-program "-")
         :sentinel
         (lambda (proc _event)
           ;; Check that the process has indeed exited, as it might be simply suspended.
@@ -81,18 +81,21 @@
                 ;; Only proceed if `proc' is the same as `mdl--flymake-proc', which indicates that `proc' is not an obsolete process.
                 (if (with-current-buffer source (eq proc mdl--flymake-proc))
                     (with-current-buffer (process-buffer proc)
+                      ;; (message (buffer-string))
                       (goto-char (point-min))
                       ;; Parse the output buffer for diagnostic's messages and locations, collect them in a list of objects, and call `report-fn'.
                       (cl-loop
                        ;; (stdin):9: MD012 Multiple consecutive blank lines
                        ;; README.md:12: MD032 Lists should be surrounded by blank lines
+                       ;; do (message "searching")
                        while (search-forward-regexp
                               ;; "^.*:\\([0-9]+\\) \\(MD[0-9]+\\) \\(.*\\)$"
-                              "^(stdin):\\([0-9]+\\): \\(MD[0-9]+ .*\\)$"
+                              "^\\(stdin\\):\\([0-9]+\\) \\(MD[0-9]+/.*\\)$"
                               nil t)
-                              ;; "^\\(?:.*.rb\\|-\\):\\([0-9]+\\): \\(.*\\)$"
-                       for msg = (match-string 2)
-                       for (beg . end) = (flymake-diag-region source (string-to-number (match-string 1)))
+                       ;; "^\\(?:.*.rb\\|-\\):\\([0-9]+\\): \\(.*\\)$"
+                       ;; do (message "found match %s" (match-string 0))
+                       for msg = (match-string 3)
+                       for (beg . end) = (flymake-diag-region source (string-to-number (match-string 2)))
                        ;; for type = (if (string-match "^warning" msg) :warning :error)
                        for type = :warning
                        when (and beg end)

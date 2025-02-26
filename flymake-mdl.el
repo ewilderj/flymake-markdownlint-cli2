@@ -52,16 +52,21 @@
   ;; Alternatives are: hugslint (for hugsql preprocessing), or a script of your own.
   :type 'string)
 
-(defcustom flymake-mdl-config
-  nil
-  "Path to linter config file. If nil, will search the default directory and its parents for a file named '.markdownlint-cli2.mjs'"
+(defcustom flymake-mdl-config-filename
+  ".markdownlint-cli2.mjs"
+  "File name of the linter config file"
   :type 'string)
 
+
+(defcustom flymake-mdl-config
+  nil
+  "Full path of linter config file. If nil, will search the default directory and its parents for a file named `flymake-mdl-config-filename`"
+  :type 'string)
 
 ;; recursively look for the file ".markdownlint-cli2.mjs" in the
 ;; current directory and then its parents
 (defun find-mdl-config (dir)
-  (let ((config-file (expand-file-name ".markdownlint-cli2.mjs" dir)))
+  (let ((config-file (expand-file-name flymake-mdl-config-filename dir)))
     (if (file-exists-p config-file)
         config-file
       (let ((parent-dir (file-name-directory (directory-file-name dir))))

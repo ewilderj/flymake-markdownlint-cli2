@@ -3,7 +3,7 @@
 ;; Copyright (c) 2024 Micah Elliott
 ;; Copyright (c) 2025 Edd Wilder-James
 
-;; Author: Edd Wilder-James
+;; Author: Edd Wilder-James @ewilderj
 ;; URL: https://github.com/ewilderj/flymake-mdl
 ;; Package-Version: 0
 
@@ -38,7 +38,7 @@
 (require 'cl-lib)
 
 (defvar-local mdl--flymake-proc nil)
-
+(defvar-local mdl--config-file nil)
 
 (message "loading flymake-markdownlint-cli2 package")
 
@@ -69,8 +69,7 @@
       (let ((parent-dir (file-name-directory (directory-file-name dir))))
         (if (equal dir parent-dir)
             nil
-          (find-mdl-config parent-dir)))))
-  )
+          (find-mdl-config parent-dir))))))
 
 (defun flymake-markdownlint-cli2 (report-fn &rest _args)
   ;; Not having the linter is a serious problem which should cause
@@ -85,24 +84,12 @@
   (when (process-live-p mdl--flymake-proc) (kill-process mdl--flymake-proc))
   ;; Save the current buffer, the narrowing restriction, remove any narrowing restriction.
 
-  ;; (let ((mdl--config-file
-  ;;        (or flymake-mdl-config
-  ;;            (find-mdl-config default-directory)))
-  ;;       (mdl--args
-  ;;        (if mdl--config-file
-  ;;            (list "--config" mdl--config-file "-")
-  ;;          (list "-")))
-  ;;       (mdl--dir
-  ;;        (if mdl--config-file
-  ;;            (file-name-directory mdl--config-file)
-  ;;          default-directory)))
-  ;;   )
+  (setq mdl--config-file
+        (or flymake-markdownlint-cli2-config
+            (find-mdl-config default-directory)))
 
   (let ((source (current-buffer))
-        (mdl--config-file
-         (or flymake-markdownlint-cli2-config
-             (find-mdl-config default-directory)))
-        (mdl--args
+        (mdl-args
          (if mdl--config-file
              (list "--config" mdl--config-file "-")
            (list "-")))
@@ -119,13 +106,13 @@
        (make-process
         :name "flymake-markdownlint-cli2" :noquery t :connection-type 'pipe
         :buffer (generate-new-buffer " *flymake-markdownlint-cli2*") ; Make output go to a temporary buffer.
-        :command (append (list flymake-markdownlint-cli2-program) mdl--args)
+        :command (append (list flymake-markdownlint-cli2-program) mdl-args)
         :sentinel
         (lambda (proc _event)
           ;; Check that the process has indeed exited, as it might be simply suspended.
           (when (memq (process-status proc) '(exit signal))
             (unwind-protect
-                ;; Only proceed if `proc' is the same as `markdownlint-cli2--flymake-proc',
+                ;; Only proceed if `proc' is the same as `mdl--flymake-proc',
                 ;; which indicates that `proc' is not an obsolete process.
                 (if (with-current-buffer source (eq proc mdl--flymake-proc))
                     (with-current-buffer (process-buffer proc)

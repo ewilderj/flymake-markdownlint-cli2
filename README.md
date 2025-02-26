@@ -1,27 +1,37 @@
-# flymake-mdl, a markdown linter for Emacs
-
-## Notes from @ewilderj
-
-This has been forked to work with [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2).
-
-## Original README contents...
+# flymake-markdownlint-cli2, a markdown linter for Emacs
 
 
-Lint your markdown files with
+Lint your Markdown files with
 [flymake](https://www.gnu.org/software/emacs/manual/html_node/flymake/index.html)
-(built into Emacs)
-and the best markdown linter,
-[markdownlint](https://github.com/markdownlint/markdownlint), AKA `mdl` (the
-ruby version that's easy to install and configure).
-
-But note that `mdl` is a little slow, so you might want to
-[only run flymake on save](https://stackoverflow.com/questions/6110691/is-there-a-way-to-make-flymake-to-compile-only-when-i-save).
+(built into Emacs) and
+[markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2).
 
 ## Usage
 
 ```lisp
 (add-hook 'markdown-mode-hook #'flymake-mode)
-(require 'flymake-mdl)
-(add-hook 'markdown-mode-hook 'flymake-mdl-setup)
+(require 'flymake-markdownlint-cli2)
+(add-hook 'markdown-mode-hook 'flymake-markdownlint-cli2-setup)
 ```
 
+## Configuration
+
+By default the mode looks for `.markdownlint-cli2.mjs` in the buffer's
+directory, and searches recursively upwards in the file system until
+it finds a config file.  The configuration filename can be configured,
+and you can also specify an absolute path to the configuration file.
+
+Type `M-x customize-group` followed by `flymake-markdownlint-cli2` to
+configure these options.
+
+### Example
+
+If you want to extend or override the default rules, e.g. by using rules
+from [github/markdownlint-github](https://github.com/github/markdownlint-github),
+install these into the root of your project, and create a configuration
+file `.markdownlint-cli2.mjs` accordingly.
+
+## Credits
+
+This mode was adapted from Micah Elliott's work at
+[flymake-mdl](https://github.com/MicahElliott/flymake-mdl).

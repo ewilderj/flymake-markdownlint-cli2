@@ -1,6 +1,5 @@
 # flymake-markdownlint-cli2, a markdown linter for Emacs
 
-
 Lint your Markdown files with
 [flymake](https://www.gnu.org/software/emacs/manual/html_node/flymake/index.html)
 (built into Emacs) and
@@ -12,6 +11,18 @@ Lint your Markdown files with
 (add-hook 'markdown-mode-hook #'flymake-mode)
 (require 'flymake-markdownlint-cli2)
 (add-hook 'markdown-mode-hook 'flymake-markdownlint-cli2-setup)
+```
+
+### With use-package
+
+``` lisp
+(use-package flymake-markdownlint-cli2
+  :vc (:url "https://github.com/ewilderj/flymake-markdownlint-cli2"
+            :rev :newest
+            :branch "main")
+  :config
+  (add-hook 'markdown-mode-hook 'flymake-mode)
+  (add-hook 'markdown-mode-hook 'flymake-markdownlint-cli2-setup))
 ```
 
 ## Configuration

@@ -1,10 +1,10 @@
-;;; flymake-mdl.el --- An mdl Flymake backend  -*- lexical-binding: t; -*-
+;;; flymake-markdownlint-cli2.el --- A markdownlint-cli-2 Flymake backend  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2024 Micah Elliott
 ;; Copyright (c) 2025 Edd Wilder-James
 
 ;; Author: Edd Wilder-James @ewilderj
-;; URL: https://github.com/ewilderj/flymake-mdl
+;; URL: https://github.com/ewilderj/flymake-markdownlint-cli2
 ;; Package-Version: 0
 
 ;; Original author
@@ -43,7 +43,7 @@
 (message "loading flymake-markdownlint-cli2 package")
 
 (defgroup flymake-markdownlint-cli2 nil
-  "markdownlint-cli2 backend for Flymake."
+  "A markdownlint-cli2 backend for Flymake."
   :prefix "flymake-markdownlint-cli2-"
   :group 'tools)
 
@@ -54,12 +54,12 @@
 
 (defcustom flymake-markdownlint-cli2-config-filename
   ".markdownlint-cli2.mjs"
-  "File name of the linter config file"
+  "File name of the linter config file."
   :type 'string)
 
 (defcustom flymake-markdownlint-cli2-config
   nil
-  "Full path of linter config file. If nil, searches the default directory and its parents for a file named `flymake-markdownlint-cli2-config-filename`"
+  "Full path of linter config file.  Overrides search."
   :type 'string)
 
 (defun find-mdl-config (dir)
@@ -72,6 +72,7 @@
           (find-mdl-config parent-dir))))))
 
 (defun flymake-markdownlint-cli2 (report-fn &rest _args)
+
   ;; Not having the linter is a serious problem which should cause
   ;; the backend to disable itself, so an error is signaled.
   (unless (executable-find flymake-markdownlint-cli2-program)
